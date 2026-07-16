@@ -46,6 +46,8 @@ test("normalizeSearchPage strips html and maps hits", () => {
 test("search sends the expected payload", async () => {
   const requests: Request[] = [];
   const originalFetch = global.fetch;
+  const oldCache = process.env.PROSPERO_CACHE_ENABLED;
+  process.env.PROSPERO_CACHE_ENABLED = "false";
   global.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     requests.push(new Request(input, init));
     return new Response(
@@ -81,6 +83,7 @@ test("search sends the expected payload", async () => {
     assert.equal(body.nperpage, 5);
   } finally {
     global.fetch = originalFetch;
+    if (oldCache === undefined) delete process.env.PROSPERO_CACHE_ENABLED; else process.env.PROSPERO_CACHE_ENABLED = oldCache;
   }
 });
 

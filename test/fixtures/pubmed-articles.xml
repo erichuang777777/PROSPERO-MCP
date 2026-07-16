@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID>12345678</PMID>
+      <Article>
+        <Journal>
+          <JournalIssue><PubDate><Year>2025</Year><Month>Nov</Month></PubDate></JournalIssue>
+          <Title>Systematic Reviews</Title>
+        </Journal>
+        <ArticleTitle>Breast cancer prediction tests: a systematic review</ArticleTitle>
+        <Abstract>
+          <AbstractText Label="BACKGROUND">Prediction tests may support risk assessment.</AbstractText>
+          <AbstractText Label="OBJECTIVE">To review women's perceptions.</AbstractText>
+        </Abstract>
+        <AuthorList>
+          <Author><ForeName>Jane</ForeName><LastName>Doe</LastName></Author>
+        </AuthorList>
+        <PublicationTypeList><PublicationType>Systematic Review</PublicationType></PublicationTypeList>
+      </Article>
+    </MedlineCitation>
+    <PubmedData><ArticleIdList><ArticleId IdType="doi">10.1000/example</ArticleId></ArticleIdList></PubmedData>
+  </PubmedArticle>
+</PubmedArticleSet>

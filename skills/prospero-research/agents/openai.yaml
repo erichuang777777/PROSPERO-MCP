@@ -1,0 +1,4 @@
+interface:
+  display_name: "PROSPERO Research"
+  short_description: "Search and prepare safe PROSPERO registrations"
+  default_prompt: "Use $prospero-research to search PROSPERO and prepare a source-traceable registration draft."

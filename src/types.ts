@@ -101,6 +101,69 @@ export interface ProsperoRegisterChecklistResult extends ProsperoBrowserPageSnap
   sections: ProsperoRegisterChecklistSection[];
 }
 
+export interface ProsperoDraft {
+  record_id: number;
+  accession_number: string;
+  record_version_id: string;
+  template_id: string;
+  template_variant: string;
+  purpose: string;
+  publication_status: string;
+  editing_status: string;
+  title: string;
+  created_at: string;
+  last_edited_at: string;
+  editable: boolean;
+}
+
+export interface ProsperoDraftSelector {
+  record_id?: number | undefined;
+  record_version_id?: string | undefined;
+  title?: string | undefined;
+}
+
+export interface ProsperoRegistrationControl {
+  tag: string;
+  type: string;
+  name: string;
+  id: string;
+  label: string;
+  required: boolean;
+  placeholder: string;
+  options: string[];
+  context: string;
+  value: string;
+  checked: boolean | null;
+}
+
+export interface ProsperoRegistrationSchemaField {
+  section: string;
+  title: string;
+  status: string;
+  route: string | null;
+  instructions: string | null;
+  required: boolean | null;
+  minimum_words: number | null;
+  maximum_words: number | null;
+  controls: ProsperoRegistrationControl[];
+  detail_captured: boolean;
+}
+
+export interface ProsperoRegistrationSchemaSection {
+  title: string;
+  intro_text: string;
+  fields: ProsperoRegistrationSchemaField[];
+}
+
+export interface ProsperoRegistrationSchema {
+  captured_at: string;
+  source: "live";
+  draft: ProsperoDraft;
+  sections: ProsperoRegistrationSchemaSection[];
+  total_fields: number;
+  detailed_fields: number;
+}
+
 export interface ProsperoSearchArgs {
   query: string;
   page?: number | undefined;
