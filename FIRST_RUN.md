@@ -25,6 +25,14 @@ npm run build
 
 If installed from a released npm package, the guided executable is `prospero-mcp-setup` and no source build is required.
 
+Optionally install the bundled Codex skill:
+
+```powershell
+prospero-mcp-install-skill
+```
+
+Restart Codex so it discovers `$prospero-research`. MCP and CLI work without the skill; the skill adds agent routing, workflows, and safety instructions.
+
 ## 3. Run guided setup
 
 ```powershell
@@ -53,6 +61,17 @@ The browser closes automatically after login is captured. Do not type your PROSP
 Open `.prospero-mcp.generated.json`, copy the `prospero` entry into your MCP client's `mcpServers` configuration, and restart the client.
 
 The generated configuration uses absolute paths so the login profile is found even when the MCP client starts from another working directory.
+
+It also restricts protocol reads and generated-file writes to the directory where setup was run. To use a separate research directory, edit the generated MCP environment and set both paths explicitly:
+
+```json
+{
+  "PROSPERO_ALLOWED_PROTOCOL_DIRS": "D:/research",
+  "PROSPERO_ALLOWED_OUTPUT_DIRS": "D:/research"
+}
+```
+
+Use semicolons between multiple roots on Windows. `PROSPERO_NETWORK_MODE=offline` provides a fully local drafting mode.
 
 ## 5. Verify from the MCP client
 
@@ -93,3 +112,7 @@ The new session replaces the local saved session. It does not modify source file
 ## 7. Prepare registration answers
 
 Use `PROSPERO_REGISTRATION_WORKBOOK.md` outside the website. Draft and confirm each answer there, then paste fields into PROSPERO manually. This project does not automatically submit a registration.
+
+For protocol-assisted drafting, call `prospero_generate_workbook` with a local TXT, Markdown, PDF or DOCX file, then call `prospero_validate_registration` before copying answers to PROSPERO. Always confirm dates, review stage, team details, conflicts and methodological commitments yourself.
+
+`prospero_protocol_to_registration` adds similar-review discovery. It always produces the protocol workbook even if PubMed is disabled or temporarily unavailable. PubMed does not require an API key for low-rate use; an optional key can be kept in the local `NCBI_API_KEY` environment variable and must never be committed.

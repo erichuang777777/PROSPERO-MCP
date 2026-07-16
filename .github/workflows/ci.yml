@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - name: Verify package allowlist
+        if: matrix.node-version == 22
+        run: npm pack --dry-run
+      - name: Reject tracked local credentials and research downloads
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)(\.prospero-profile|prospero-session\.json|\.env$|.*\.log$|.*\.pdf$|.*\.zip$|.*\.tgz$)'; then
+            echo "Forbidden local or credential file is tracked"
+            exit 1
+          fi

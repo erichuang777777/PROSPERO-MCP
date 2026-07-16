@@ -8,6 +8,10 @@ import type {
   ProsperoSimilarReviewInput,
   ProsperoSortField,
 } from "./types.js";
+import { ProsperoError } from "./errors.js";
+import { withRetry } from "./retry.js";
+import { assertExternalNetworkAllowed, assertSafeOutboundText } from "./safety-policy.js";
+import { cacheKey, readPublicCache, writePublicCache } from "./public-cache.js";
 
 export class ProsperoClient {
   constructor(private readonly config: ProsperoConfig) {}
@@ -16,11 +20,17 @@ export class ProsperoClient {
     const page = args.page ?? 1;
     const pageSize = clampInt(args.page_size ?? 20, 1, 50);
     const query = args.query.trim();
+    assertSafeOutboundText(query, "prospero");
     const field = args.field ?? "ALL";
     const effectiveQuery = field === "ALL" ? query : `(${query}):${field}`;
     const sort = mapSortField(args.sort ?? "title");
     const sortOrder = args.sort_order ?? "asc";
     const filters = buildFilters(args);
+    const key = cacheKey({ effectiveQuery, page, pageSize, sort, sortOrder, filters });
+    const offline = process.env.PROSPERO_NETWORK_MODE !== "online";
+    const cached = readPublicCache<ProsperoSearchPage>("prospero-search", key, offline);
+    if (cached) return { ...cached.data, raw_note: `cache: ${cached.stale ? "stale offline" : "fresh"}; created ${cached.created_at}` };
+    assertExternalNetworkAllowed("prospero");
 
     const response = await this.postSearch({
       term: effectiveQuery,
@@ -34,7 +44,9 @@ export class ProsperoClient {
       download: false,
     });
 
-    return normalizeSearchPage(response, page, pageSize, effectiveQuery);
+    const normalized = normalizeSearchPage(response, page, pageSize, effectiveQuery);
+    writePublicCache("prospero-search", key, normalized);
+    return normalized;
   }
 
   async searchByAccession(accession: string): Promise<ProsperoSearchPage> {
@@ -51,6 +63,15 @@ export class ProsperoClient {
   async checkSimilarReviews(
     input: ProsperoSimilarReviewInput,
   ): Promise<ProsperoSimilarReview[]> {
+    assertExternalNetworkAllowed("prospero");
+    assertSafeOutboundText([
+      input.title,
+      input.review_question,
+      input.condition,
+      input.intervention,
+      input.comparator,
+      input.outcomes,
+    ].filter(Boolean).join(" "), "prospero");
     const response = await this.postJson("record/checksimilarrecords", {
       recordversion: input.recordversion ?? 0,
       title: input.title,
@@ -69,30 +90,82 @@ export class ProsperoClient {
   }
 
   private async postJson(path: string, payload: Record<string, unknown>): Promise<unknown> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
-
-    try {
-      const res = await fetch(new URL(path, this.config.baseUrl), {
-        method: "POST",
-        headers: this.buildHeaders(),
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      const rawText = await res.text();
-      if (!res.ok) {
-        throw new Error(`PROSPERO search failed (${res.status}): ${rawText.slice(0, 500)}`);
-      }
+    return withRetry(async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
 
       try {
-        return JSON.parse(rawText) as unknown;
-      } catch {
-        throw new Error("PROSPERO search returned non-JSON content");
+        let res: Response;
+        try {
+          res = await fetch(new URL(path, this.config.baseUrl), {
+            method: "POST",
+            headers: this.buildHeaders(),
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            throw new ProsperoError({
+              code: "NETWORK_TIMEOUT",
+              message: `PROSPERO API timed out after ${this.config.timeoutMs} ms.`,
+              retryable: true,
+              action: "Retry after PROSPERO recovers or increase PROSPERO_TIMEOUT_MS.",
+              details: { path },
+            }, { cause: error });
+          }
+          throw new ProsperoError({
+            code: "NETWORK_ERROR",
+            message: "The PROSPERO API request failed before a response was received.",
+            retryable: true,
+            action: "Check network access and retry after PROSPERO recovers.",
+            details: { path },
+          }, { cause: error });
+        }
+
+        const rawText = await res.text();
+        if (res.status === 401 || res.status === 403) {
+          throw new ProsperoError({
+            code: "AUTH_REQUIRED",
+            message: "PROSPERO rejected the authentication state.",
+            retryable: false,
+            action: "Run prospero-mcp-login and retry.",
+            details: { path, status: res.status },
+          });
+        }
+        if (res.status >= 500) {
+          throw new ProsperoError({
+            code: "SITE_UNAVAILABLE",
+            message: `PROSPERO returned HTTP ${res.status}.`,
+            retryable: true,
+            action: "Retry after the PROSPERO service recovers.",
+            details: { path, status: res.status },
+          });
+        }
+        if (!res.ok) {
+          throw new ProsperoError({
+            code: "HTTP_ERROR",
+            message: `PROSPERO returned HTTP ${res.status}.`,
+            retryable: false,
+            action: "Review the request and PROSPERO response status.",
+            details: { path, status: res.status, response_preview: rawText.slice(0, 300) },
+          });
+        }
+
+        try {
+          return JSON.parse(rawText) as unknown;
+        } catch (error) {
+          throw new ProsperoError({
+            code: "INVALID_RESPONSE",
+            message: "PROSPERO returned non-JSON content for an API request.",
+            retryable: false,
+            action: "Check whether the PROSPERO API contract changed.",
+            details: { path, response_preview: rawText.slice(0, 300) },
+          }, { cause: error });
+        }
+      } finally {
+        clearTimeout(timeout);
       }
-    } finally {
-      clearTimeout(timeout);
-    }
+    });
   }
 
   private buildHeaders(): Record<string, string> {

@@ -1,6 +1,6 @@
 # PROSPERO Registration Workbook
 
-這份工作表依照 PROSPERO register 頁面的 12 個區段與 39 個欄位排列。先在此完成英文答案，再逐欄貼回 PROSPERO。
+這份工作表依照 PROSPERO register 頁面的 12 個區段與 39 個欄位排列。先在此完成英文答案，再逐欄貼回 PROSPERO。文末限制表取自 2026-07-16 的 PROSPERO 2.0.39 Intervention registration 頁面；網站更新後應以 `prospero_get_registration_schema` 的即時結果為準。
 
 ## 使用規則
 
@@ -515,3 +515,51 @@ Guarantor/contact:
 - [ ] Team、funding、peer review、COI 均由相關人員確認
 - [ ] Protocol URL／PDF 與 search strategy URL／PDF 可正常存取
 - [ ] 尚未在 PROSPERO 按 Submit；提交前由 guarantor 完整預覽
+
+---
+
+# Live schema constraints snapshot
+
+`Required` 與字數限制是 2026-07-16 實際擷取結果。`—` 表示該頁未顯示文字字數限制，並不代表可略過網站選項或其他驗證。
+
+| Key | Field | Required | Words |
+|---|---|---:|---:|
+| `review_title` | Review title | Yes | 5–30 |
+| `review_type` | Review type | No | — |
+| `condition` | Condition or domain being studied | Yes | 1–200 |
+| `rationale` | Rationale for the review | Yes | 5–250 |
+| `objectives` | Review objectives | Yes | 10–200 |
+| `keywords` | Keywords | Yes | — |
+| `country` | Country | Yes | — |
+| `population` | Population | Yes | 5–200 |
+| `interventions_exposures` | Intervention(s) or exposure(s) | Yes | 0–200 |
+| `comparators` | Comparator(s) or control(s) | No | — |
+| `study_design` | Study design | Yes | 0–250 |
+| `context` | Context | Yes | 5–250 |
+| `similar_reviews` | Check for similar records already in PROSPERO | Yes | — |
+| `review_timeline` | Review timeline | Yes | — |
+| `full_protocol` | Availability of full protocol | Yes | — |
+| `unpublished_studies` | Search for unpublished studies | Yes | — |
+| `search_sources` | Main sources that will be searched | Yes | — |
+| `language_restrictions` | Search language restrictions | Yes | — |
+| `date_restrictions` | Search date restrictions | Yes | — |
+| `other_identification_methods` | Other methods of identifying studies | No | 0–50 |
+| `search_strategy_link` | Link to search strategy | Yes | — |
+| `selection_process` | Selection process | Yes | — |
+| `search_screening_other` | Other relevant information about searching and screening | No | 0–250 |
+| `data_extraction` | Data extraction from published articles and reports | Yes | — |
+| `risk_of_bias` | Study risk of bias or quality assessment | Yes | — |
+| `reporting_bias` | Reporting bias assessment | Yes | — |
+| `certainty_assessment` | Certainty assessment | Yes | — |
+| `main_outcomes` | Main outcomes | Yes | 5–250 |
+| `additional_outcomes` | Additional outcomes | No | 0–300 |
+| `synthesis_strategy` | Strategy for data synthesis | Yes | — |
+| `review_stage` | Stage of the review at this submission | Yes | — |
+| `publication_results` | Publication of review results | Yes | — |
+| `team_members` | Review team members | Yes | — |
+| `affiliation` | Review affiliation | Yes | 1–20 |
+| `funding` | Funding source | Yes | 0–50 |
+| `peer_review` | Peer review | Yes | — |
+| `additional_information` | Additional information | No | 0–250 |
+| `conflict_of_interest` | Review conflict of interest | Yes | — |
+| `mesh_terms` | Medical Subject Headings | No | — |

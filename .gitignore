@@ -13,3 +13,8 @@ search-strategy-*.pdf
 .prospero-mcp.generated.json
 prospero-registration-fields.json
 npm-debug.log*
+.prospero-audit/
+.prospero-patches/
+.prospero-clipboard/
+.prospero-cache/
+.prospero-locks/

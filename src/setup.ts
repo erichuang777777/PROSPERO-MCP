@@ -9,9 +9,11 @@ import { fileURLToPath } from "node:url";
 
 import {
   loadProsperoSessionState,
+  getProsperoSessionStatus,
   resolveBrowserPath,
   resolveProsperoSessionStatePath,
   resolveProsperoUserDataDir,
+  saveProsperoSessionState,
 } from "./prospero-browser.js";
 import { ProsperoClient } from "./prospero-client.js";
 import { resolveConfig } from "./config.js";
@@ -48,7 +50,11 @@ async function main() {
   }
 
   validateStoredSession(session.user, session.token);
+  if (getProsperoSessionStatus().protection === "legacy-plaintext") {
+    saveProsperoSessionState(session.token, session.user);
+  }
   print(`✓ Login session captured locally: ${resolveProsperoSessionStatePath()}`);
+  print(`✓ Session protection: ${getProsperoSessionStatus().protection}`);
 
   const client = new ProsperoClient(resolveConfig());
   const search = await client.search({ query: "breast cancer", page: 1, page_size: 1 });
@@ -102,6 +108,13 @@ function writeMcpConfigExample(): string {
         args: [serverPath],
         env: {
           PROSPERO_USER_DATA_DIR: resolveProsperoUserDataDir(),
+          PROSPERO_ALLOWED_PROTOCOL_DIRS: process.cwd(),
+          PROSPERO_ALLOWED_OUTPUT_DIRS: process.cwd(),
+          PROSPERO_NETWORK_MODE: "online",
+          PROSPERO_TOOL_PROFILE: "authoring",
+          PROSPERO_RESPONSE_MODE: "standard",
+          PROSPERO_ENABLE_CLIPBOARD: "false",
+          PROSPERO_ENABLE_WRITES: "false",
         },
       },
     },

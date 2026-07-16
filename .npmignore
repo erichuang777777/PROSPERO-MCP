@@ -11,3 +11,8 @@ test/
 src/
 .prospero-mcp.generated.json
 prospero-registration-fields.json
+.prospero-audit/
+.prospero-patches/
+.prospero-clipboard/
+.prospero-cache/
+.prospero-locks/

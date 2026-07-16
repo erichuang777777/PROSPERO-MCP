@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased
+
+## 0.2.0 - 2026-07-16
+
+### Added
+
+- Packaged one shared core as a stdio MCP server, machine-readable `prospero` CLI, and installable `prospero-research` Codex skill.
+- Added structured CLI errors/exit codes, read-only discovery and authoring commands, and a non-overwriting skill installer.
+- Added core/authoring/full tool profiles and summary/standard/full response modes.
+- Added lazy browser/document/clipboard loading, bounded isolated PDF/DOCX parsing and a declaration/source-map-free release build.
+- Added opt-in auto-clearing clipboard access, two-step protected-artifact plaintext release, atomic local writes and per-draft locks.
+- Added a TTL cache for public PROSPERO/PubMed metadata with offline stale fallback; credentials and protocol text are never cached.
+- Added fail-closed path roots, offline mode, outbound privacy scanning and two-step external-query confirmation.
+- Added source/page/line provenance, field states, missing-information interviews and stale-confirmation detection.
+- Added advanced consistency/search-strategy lint, local HTML preview, single-use clipboard queue, version diff and similar-review monitoring.
+- Added optional DPAPI/AES-256-GCM local artifact protection while retaining permanent no-submit/no-delete prohibitions.
+- Added a blank, extraction-compatible 39-field PROSPERO protocol template and a section-by-section Chinese writing guide.
+- Added `prospero_protocol_to_registration` for protocol-to-workbook generation plus combined PROSPERO and PubMed similar-review discovery.
+- Added an optional NCBI E-utilities client with no required API key and explicit empty/unavailable/skipped source states.
+- Added cross-source title deduplication, lexical triage, draft difference rationales and safe PROSPERO-only degradation.
+- Added PubMed XML, no-key, zero-result, disabled-source and unavailable-source tests.
+
+- Structured error envelope and retry/backoff for transient PROSPERO failures.
+- Windows DPAPI protection and expiry diagnostics for saved sessions.
+- Stable multi-draft discovery and explicit draft selection.
+- Live 39-field registration schema, instructions, controls and word-limit capture.
+- TXT/Markdown/PDF/DOCX protocol import and generated registration workbook.
+- Registration completeness, live-rule and methodological consistency validator.
+- PICO query builder, bulk JSON/CSV/RIS export and similar-review comparison drafts.
+- Dry-run registration patches with provenance, confidence and confirmation hashes.
+- Disabled-by-default, allowlisted `Save for later` assistance with sanitized audit logs.
+- HTML parser fixtures, selector-drift errors, expanded unit tests and GitHub Actions CI.
+
+### Safety
+
+- Mark complete, submit, delete, withdraw, release and author-approval automation remain permanently unsupported.
+
 ## 0.1.0 - 2026-07-16
 
 Initial release.
