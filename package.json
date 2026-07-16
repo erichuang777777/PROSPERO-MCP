@@ -1,0 +1,47 @@
+{
+  "name": "prospero-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for searching PROSPERO protocols",
+  "type": "module",
+  "main": "dist/server.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "FIRST_RUN.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "PROSPERO_REGISTRATION_WORKBOOK.md"
+  ],
+  "bin": {
+    "prospero-mcp": "./dist/server.js",
+    "prospero-mcp-setup": "./dist/setup.js",
+    "prospero-mcp-login": "./dist/prospero-login.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/server.ts",
+    "login:prospero": "tsx src/prospero-login.ts",
+    "setup:prospero": "tsx src/setup.ts",
+    "setup:check": "tsx src/setup.ts --check-only",
+    "prepack": "npm run build && npm test",
+    "release:check": "npm pack --dry-run",
+    "release:pack": "npm pack",
+    "start": "node dist/server.js",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "dotenv": "^17.3.1",
+    "playwright-core": "^1.61.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

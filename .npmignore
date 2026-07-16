@@ -1,0 +1,13 @@
+.prospero-profile/
+.env
+.env.*
+*.log
+*.zip
+*.pdf
+*.tgz
+coverage/
+node_modules/
+test/
+src/
+.prospero-mcp.generated.json
+prospero-registration-fields.json

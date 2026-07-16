@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.prospero-profile/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+*.tgz
+*.zip
+search-strategy-*.pdf
+.prospero-mcp.generated.json
+prospero-registration-fields.json
+npm-debug.log*
