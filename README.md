@@ -28,11 +28,25 @@ The only browser-writing exception anywhere in the codebase is the MCP `full`-pr
 
 ## Quick start
 
+Install in one command straight from GitHub (builds automatically on install):
+
+```powershell
+npm install -g github:erichuang777777/PROSPERO-MCP
+prospero-mcp-setup
+```
+
+This installs the `prospero`, `prospero-mcp`, `prospero-mcp-setup`, `prospero-mcp-login` and `prospero-mcp-install-skill` executables globally. Pin a specific release with `github:erichuang777777/PROSPERO-MCP#v0.2.1`.
+
+<details>
+<summary>Alternative: install from a cloned checkout</summary>
+
 ```powershell
 npm install
 npm run build
 npm run setup:prospero
 ```
+
+</details>
 
 The guided setup finds Chrome/Edge, opens PROSPERO for website login, verifies public and authenticated access, and generates a local MCP configuration example. See [FIRST_RUN.md](FIRST_RUN.md) for the complete first-time flow.
 

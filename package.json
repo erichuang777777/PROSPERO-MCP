@@ -27,6 +27,7 @@
     "clean:dist": "node scripts/clean-dist.mjs",
     "build:release": "npm run clean:dist && tsc -p tsconfig.release.json",
     "check": "tsc -p tsconfig.json --noEmit",
+    "prepare": "node scripts/prepare-build.mjs",
     "dev": "tsx src/server.ts",
     "cli": "tsx src/cli.ts",
     "login:prospero": "tsx src/prospero-login.ts",
