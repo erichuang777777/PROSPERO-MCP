@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Upgraded devDependencies `typescript` (5.9 → 7.0) and `@types/node` (25 → 26), and dependency `clipboardy` (4 → 5); typecheck, tests and release build all pass. Dependency tree is fully current with no `npm audit` advisories.
+
 ## 0.2.2 - 2026-07-31
 
 ### Added
