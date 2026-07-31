@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.2.2 - 2026-07-31
+
+### Added
+
+- Claude Code plugin (`.claude-plugin/plugin.json` + marketplace) that bundles the MCP server and skill for one-step `/plugin install`.
+- Cross-platform `prospero-mcp-install-skill`: installs the skill for both Codex (`~/.codex/skills`) and Claude Code (`~/.claude/skills`) by default, with `--codex` / `--claude` to target one.
+- One-command install from GitHub via an auto-building `prepare` script.
+
 ## 0.2.1 - 2026-07-31
 
 ### Fixed

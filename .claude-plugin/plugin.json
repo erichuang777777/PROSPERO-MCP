@@ -1,0 +1,18 @@
+{
+  "name": "prospero-research",
+  "version": "0.2.2",
+  "description": "PROSPERO systematic-review automation — MCP server + skill for protocol discovery, duplicate-review checking, protocol-to-registration drafting, 39-field validation and guarded manual-paste assistance.",
+  "author": {
+    "name": "erichuang777777",
+    "url": "https://github.com/erichuang777777"
+  },
+  "homepage": "https://github.com/erichuang777777/PROSPERO-MCP",
+  "repository": "https://github.com/erichuang777777/PROSPERO-MCP",
+  "license": "ISC",
+  "keywords": ["prospero", "systematic-review", "research", "mcp", "pubmed", "registration"],
+  "mcpServers": {
+    "prospero": {
+      "command": "prospero-mcp"
+    }
+  }
+}
