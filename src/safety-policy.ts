@@ -31,7 +31,9 @@ export function scanOutboundText(value: string): PrivacyFinding[] {
   collect(findings, value, "email", /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi);
   collect(findings, value, "token", /\b(?:eyJ[A-Za-z0-9_-]{20,}|[A-Fa-f0-9]{32,})\b/g);
   collect(findings, value, "clinical_identifier", /\b(?:MRN|medical record|patient id|subject id)\s*[:#-]?\s*[A-Z0-9-]{4,}\b/gi);
-  collect(findings, value, "phone", /(?:\+\d[\d ()-]{8,}\d|(?<!\w)\d{2,4}[ -]\d{3,4}[ -]\d{3,4}(?!\w))/g);
+  // Require an international +prefix or the classic 3-3-4 grouping so accession numbers,
+  // ISO dates and other registry identifiers are not flagged as phone numbers.
+  collect(findings, value, "phone", /(?:\+\d[\d ()-]{8,}\d|(?<!\w)\(?\d{3}\)?[ -]\d{3}[ -]\d{4}(?!\w))/g);
   return findings;
 }
 
@@ -106,7 +108,19 @@ function assertWithinRoots(candidate: string, roots: string[], kind: string): vo
 function allowedRoots(environmentName: string): string[] {
   const configured = process.env[environmentName]?.split(path.delimiter).map((value) => value.trim()).filter(Boolean) ?? [];
   const roots = configured.length ? configured : [process.cwd()];
-  return roots.map((root) => realpathSync(path.resolve(root)));
+  return roots.map((root) => {
+    try {
+      return realpathSync(path.resolve(root));
+    } catch (error) {
+      throw new ProsperoError({
+        code: "CONFIG_ERROR",
+        message: `Configured allowlist directory does not exist: ${root}`,
+        retryable: false,
+        action: `Remove or correct the entry in ${environmentName}.`,
+        details: { environment: environmentName, root },
+      }, { cause: error });
+    }
+  });
 }
 
 function normalize(value: string): string {

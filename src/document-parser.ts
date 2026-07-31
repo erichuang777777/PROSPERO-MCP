@@ -15,9 +15,10 @@ export function parseDocumentIsolated(filePath: string, format: "pdf" | "docx"):
   const argumentsList = [`--max-old-space-size=${Math.min(2_048, Math.max(64, memoryMb))}`, ...(production ? [] : ["--import", "tsx"]), worker, format, filePath];
   const timeout = readLimit("PROSPERO_PARSER_TIMEOUT_MS", 60_000);
   return new Promise((resolve, reject) => {
-    execFile(process.execPath, argumentsList, { timeout, maxBuffer: 8 * 1024 * 1024, windowsHide: true, env: process.env }, (error, stdout, stderr) => {
+    execFile(process.execPath, argumentsList, { timeout, maxBuffer: 8 * 1024 * 1024, windowsHide: true, env: parserEnvironment() }, (error, stdout, stderr) => {
       if (error) {
-        reject(new ProsperoError({ code: error.killed ? "NETWORK_TIMEOUT" : "VALIDATION_ERROR", message: error.killed ? "Document parser exceeded its time limit." : "The isolated document parser failed.", retryable: false, action: "Check whether the PDF/DOCX is damaged, encrypted, image-only or exceeds parser safety limits.", details: { format, stderr: stderr.slice(0, 500), timeout_ms: timeout, memory_mb: memoryMb } }, { cause: error }));
+        const timedOut = (error as NodeJS.ErrnoException).code === "ETIMEDOUT";
+        reject(new ProsperoError({ code: timedOut ? "NETWORK_TIMEOUT" : "VALIDATION_ERROR", message: timedOut ? "Document parser exceeded its time limit." : "The isolated document parser failed.", retryable: false, action: "Check whether the PDF/DOCX is damaged, encrypted, image-only or exceeds parser safety limits.", details: { format, stderr: stderr.slice(0, 500), timeout_ms: timeout, memory_mb: memoryMb } }, { cause: error }));
         return;
       }
       try { resolve(JSON.parse(stdout) as IsolatedDocumentResult); }
@@ -26,3 +27,14 @@ export function parseDocumentIsolated(filePath: string, format: "pdf" | "docx"):
   });
 }
 function readLimit(name: string, fallback: number): number { const value = Number.parseInt(process.env[name] ?? "", 10); return Number.isFinite(value) && value > 0 ? value : fallback; }
+
+// Documents are untrusted input; never expose credentials/session material to the parser
+// subprocess. Keep OS/runtime variables (PATH, tsx loader) but strip anything secret-shaped.
+function parserEnvironment(): NodeJS.ProcessEnv {
+  const secretPattern = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|SESSION)/i;
+  const environment: NodeJS.ProcessEnv = {};
+  for (const [name, value] of Object.entries(process.env)) {
+    if (!secretPattern.test(name)) environment[name] = value;
+  }
+  return environment;
+}

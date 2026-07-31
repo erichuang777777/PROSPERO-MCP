@@ -105,7 +105,12 @@ export async function copyConfirmedQueueField(queueId: string, key: string, conf
   if (queueId !== confirmationHash) throw new ProsperoError({ code: "WRITE_CONFIRMATION_REQUIRED", message: "Clipboard queue confirmation does not match.", retryable: false, action: "Return the reviewed queue_id exactly." });
   const queuePath = path.resolve(process.env.PROSPERO_CLIPBOARD_DIR ?? ".prospero-clipboard", `${queueId}.json`);
   if (!existsSync(queuePath)) throw new ProsperoError({ code: "WRITE_CONFIRMATION_REQUIRED", message: "Clipboard queue receipt was not found.", retryable: false, action: "Prepare a new queue." });
-  const queue = JSON.parse(readFileSync(queuePath, "utf8")) as { items: Array<{ key: string; title: string; value: string; copied_at: string | null }> };
+  let queue: { items: Array<{ key: string; title: string; value: string; copied_at: string | null }> };
+  try {
+    queue = JSON.parse(readFileSync(queuePath, "utf8")) as { items: Array<{ key: string; title: string; value: string; copied_at: string | null }> };
+  } catch (error) {
+    throw new ProsperoError({ code: "WRITE_CONFIRMATION_REQUIRED", message: "The clipboard queue file is corrupt.", retryable: false, action: "Prepare a new queue." }, { cause: error });
+  }
   const item = queue.items.find((entry) => entry.key === key);
   if (!item || item.copied_at) throw new ProsperoError({ code: "WRITE_CONFIRMATION_REQUIRED", message: "Clipboard item is missing or already copied.", retryable: false, action: "Review the queue and select an uncopied field." });
   const { default: clipboard } = await import("clipboardy");

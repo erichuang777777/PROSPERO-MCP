@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.2.1 - 2026-07-31
+
+### Fixed
+
+- Hardened the isolated document parser: strip secret-shaped environment variables from the untrusted-input subprocess and correctly classify timeouts via `ETIMEDOUT`.
+- Capped cumulative PDF page text so large multi-page documents no longer overflow the parser `maxBuffer`.
+- Serialized the PubMed E-utilities rate limiter so concurrent searches honour the NCBI interval.
+- Made `atomicWriteFileSync` durable (`fsync` before rename) and closed a stale-lock takeover race in `withFileLock`.
+- Bounded the interactive login wait with a finite, configurable timeout (`PROSPERO_LOGIN_TIMEOUT_MS`) and treat closing the window as a graceful abort.
+- Guarded untrusted `JSON.parse` on protected artifacts, similar-review snapshots and the clipboard queue; corrupt files now raise structured errors instead of crashing.
+- `consumePreparedPatchReceipt` no longer throws back to the caller after a successful save, preventing a spurious error from masking a completed write.
+- Routed user-facing export/workbook writes through atomic writes, tightened the outbound phone-number scan to avoid false positives on registry identifiers, and surfaced a clear `CONFIG_ERROR` for missing allowlist directories.
+
+### Security
+
+- Upgraded `@modelcontextprotocol/sdk`, `playwright-core` and `cheerio`, clearing all `npm audit` advisories (`fast-uri`, `@hono/node-server`).
+
 ## 0.2.0 - 2026-07-16
 
 ### Added

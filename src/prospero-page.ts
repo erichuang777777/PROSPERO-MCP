@@ -102,11 +102,12 @@ export async function openProsperoLoginBrowser(): Promise<void> {
     const page = browser.pages()[0] ?? (await browser.newPage());
     await page.goto(getProsperoLoginUrl(), { waitUntil: "networkidle", timeout: 120_000 });
     await page.bringToFront().catch(() => {});
+    const loginTimeoutMs = Math.max(60_000, Number(process.env.PROSPERO_LOGIN_TIMEOUT_MS ?? 900_000));
     try {
       await page.waitForFunction(
         () => Boolean(sessionStorage.getItem("token") && sessionStorage.getItem("user")),
         undefined,
-        { timeout: 0 },
+        { timeout: loginTimeoutMs },
       );
       const session = await page.evaluate(() => ({
         token: sessionStorage.getItem("token") ?? "",
@@ -114,7 +115,17 @@ export async function openProsperoLoginBrowser(): Promise<void> {
       }));
       saveProsperoSessionState(session.token, session.user);
     } catch (error) {
-      if (!page.isClosed()) throw error;
+      // Closing the tab or the whole window is a normal way to abort login.
+      if (page.isClosed() || browser.pages().length === 0) return;
+      if (error instanceof Error && /timeout/i.test(error.message)) {
+        throw new ProsperoError({
+          code: "NETWORK_TIMEOUT",
+          message: "Login was not completed before the configured timeout.",
+          retryable: false,
+          action: "Re-run login and complete sign-in promptly, or raise PROSPERO_LOGIN_TIMEOUT_MS.",
+        }, { cause: error });
+      }
+      throw error;
     }
   } finally {
     await browser.close().catch(() => {});
@@ -202,11 +213,7 @@ export async function fetchProsperoRegistrationSchema(
           await row.click();
           await page.waitForURL(/\/PROSPERO\/register\//, { timeout: 30_000 });
           await page.getByRole("button", { name: "Save for later", exact: true }).waitFor({ timeout: 60_000 });
-          await page.waitForFunction(
-            new Function("return !document.body.innerText.includes('Loading...')") as () => boolean,
-            undefined,
-            { timeout: 60_000 },
-          );
+          await page.waitForFunction("!document.body.innerText.includes('Loading...')", undefined, { timeout: 60_000 });
           targetSection.fields[fieldIndex] = await extractRegistrationFieldDetail(
             page,
             targetSection.title,

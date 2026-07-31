@@ -45,6 +45,7 @@ export class PubMedClient {
   private readonly fetchImpl: typeof fetch;
   private readonly cacheEnabled: boolean;
   private lastRequestAt = 0;
+  private rateGate: Promise<void> = Promise.resolve();
 
   constructor(options: PubMedClientOptions = {}) {
     this.baseUrl = ensureTrailingSlash(options.baseUrl ?? process.env.NCBI_EUTILS_BASE_URL ?? "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/");
@@ -135,7 +136,6 @@ export class PubMedClient {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
-        this.lastRequestAt = Date.now();
         const response = await this.fetchImpl(url, {
           headers: { "User-Agent": `${this.tool}/0.2 (NCBI E-utilities client)` },
           signal: controller.signal,
@@ -166,9 +166,20 @@ export class PubMedClient {
     }, { attempts: 2, delays_ms: [350] });
   }
 
+  // Serialize concurrent callers so NCBI's per-second rate limit is honoured even when
+  // multiple searches run in parallel. Each request reserves the next slot before firing.
   private async waitForRateLimit(): Promise<void> {
-    const remaining = this.minimumIntervalMs - (Date.now() - this.lastRequestAt);
-    if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
+    const previous = this.rateGate;
+    let release!: () => void;
+    this.rateGate = new Promise((resolve) => { release = resolve; });
+    try {
+      await previous;
+      const remaining = this.minimumIntervalMs - (Date.now() - this.lastRequestAt);
+      if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
+      this.lastRequestAt = Date.now();
+    } finally {
+      release();
+    }
   }
 }
 

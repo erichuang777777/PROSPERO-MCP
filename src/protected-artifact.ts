@@ -27,8 +27,7 @@ export function protectLocalArtifact(inputPath: string, outputPath: string): { o
 export function prepareProtectedArtifactRead(inputPath: string): { confirmation_hash: string; protection: string; bytes: number; plaintext_returned: false } {
   const safeInput = assertAllowedProtocolPath(inputPath);
   const raw = readFileSync(safeInput);
-  const envelope = JSON.parse(raw.toString("utf8")) as ProtectedArtifactEnvelope;
-  if (envelope.version !== 1) throw invalidArtifact();
+  const envelope = parseEnvelope(raw);
   return { confirmation_hash: createHash("sha256").update(raw).digest("hex"), protection: envelope.protection, bytes: raw.length, plaintext_returned: false };
 }
 
@@ -37,8 +36,7 @@ export function readProtectedLocalArtifact(inputPath: string, confirmationHash: 
   const raw = readFileSync(safeInput);
   const expected = createHash("sha256").update(raw).digest("hex");
   if (!confirmationHash || confirmationHash !== expected) throw new ProsperoError({ code: "WRITE_CONFIRMATION_REQUIRED", message: "Protected artifact plaintext release requires the exact confirmation hash.", retryable: false, action: "Call the read tool without a hash, review the metadata, then return confirmation_hash exactly." });
-  const envelope = JSON.parse(raw.toString("utf8")) as ProtectedArtifactEnvelope;
-  if (envelope.version !== 1) throw invalidArtifact();
+  const envelope = parseEnvelope(raw);
   const plaintext = envelope.protection === "windows-dpapi" ? unprotectDpapi(envelope) : unprotectAes(envelope);
   return { content: plaintext.toString("utf8"), protection: envelope.protection };
 }
@@ -70,4 +68,15 @@ function requireArtifactKey(): string {
   if (!value || value.length < 16) throw new ProsperoError({ code: "CONFIG_ERROR", message: "PROSPERO_ARTIFACT_KEY must contain at least 16 characters on non-Windows systems.", retryable: false, action: "Set a strong local key outside Git." });
   return value;
 }
+function parseEnvelope(raw: Buffer): ProtectedArtifactEnvelope {
+  let envelope: ProtectedArtifactEnvelope;
+  try {
+    envelope = JSON.parse(raw.toString("utf8")) as ProtectedArtifactEnvelope;
+  } catch (error) {
+    throw new ProsperoError({ code: "VALIDATION_ERROR", message: "Protected artifact envelope is not valid JSON.", retryable: false, action: "Use an artifact created by this MCP under the same user/key." }, { cause: error });
+  }
+  if (envelope.version !== 1) throw invalidArtifact();
+  return envelope;
+}
+
 function invalidArtifact(): ProsperoError { return new ProsperoError({ code: "VALIDATION_ERROR", message: "Protected artifact envelope is invalid.", retryable: false, action: "Use an artifact created by this MCP under the same user/key." }); }

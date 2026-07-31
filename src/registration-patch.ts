@@ -152,11 +152,23 @@ export function assertPreparedPatchReceipt(patch: RegistrationPatch): void {
   }
 }
 
+// Runs AFTER the irreversible Save-for-later, so it must never throw back to the caller and
+// mask a successful write. On any read/parse failure it still writes a fresh consumed marker
+// so the same patch cannot be replayed.
 export function consumePreparedPatchReceipt(patch: RegistrationPatch): void {
   const receiptPath = path.join(resolvePatchDirectory(), `${patch.confirmation_hash}.json`);
-  const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as Record<string, unknown>;
+  let receipt: Record<string, unknown>;
+  try {
+    receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as Record<string, unknown>;
+  } catch {
+    receipt = { confirmation_hash: patch.confirmation_hash, record_version_id: patch.draft.record_version_id };
+  }
   receipt.consumed_at = new Date().toISOString();
-  atomicWriteFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  try {
+    atomicWriteFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  } catch {
+    /* best-effort: the write already succeeded; do not surface a receipt error to the caller */
+  }
 }
 
 export function assertWritesEnabled(): void {

@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import "dotenv/config";
 
-import { readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -299,7 +298,7 @@ server.registerTool(
       : result.hits;
     const exported = exportSearchHits(hits, args.format);
     const outputPath = args.output_path ? assertAllowedOutputPath(args.output_path) : null;
-    if (outputPath) await writeFile(outputPath, exported, "utf8");
+    if (outputPath) atomicWriteFileSync(outputPath, exported, { encoding: "utf8" });
     return {
       query: args.query,
       total_hits: result.pages[0]?.total_hits ?? 0,
@@ -376,7 +375,7 @@ server.registerTool(
     let outputPath: string | null = null;
     if (args.write_file) {
       outputPath = assertAllowedOutputPath(args.output_path ?? defaultWorkbookOutputPath(protocol));
-      await writeFile(outputPath, workbook, "utf8");
+      atomicWriteFileSync(outputPath, workbook, { encoding: "utf8" });
     }
     return {
       protocol: {
@@ -433,7 +432,7 @@ server.registerTool(
     let workbookOutputPath: string | null = null;
     if (args.write_workbook) {
       workbookOutputPath = assertAllowedOutputPath(args.workbook_output_path ?? defaultWorkbookOutputPath(protocol));
-      await writeFile(workbookOutputPath, workbook, "utf8");
+      atomicWriteFileSync(workbookOutputPath, workbook, { encoding: "utf8" });
     }
     const includePubMed = args.include_pubmed ?? process.env.PUBMED_ENABLED !== "false";
     const discovery = await discoverProtocolSimilarReviews(protocol, answers, client, pubmedClient, {
@@ -604,7 +603,7 @@ server.registerTool(
     const extracted = extractProtocolCandidates(protocol);
     const discovery = await discoverProtocolSimilarReviews(protocol, extracted, client, pubmedClient, { includePubMed: args.include_pubmed ?? true, maxProspero: args.max_records ?? 25, maxPubMed: args.max_records ?? 25, requireExternalConfirmation: true, externalConfirmationHash: args.external_query_confirmation_hash });
     const safeSnapshotPath = assertAllowedOutputPath(args.snapshot_path);
-    const previous = existsSync(safeSnapshotPath) ? JSON.parse(await readFile(safeSnapshotPath, "utf8")) as { identifiers?: string[] } : {};
+    const previous = readSnapshotSafely(safeSnapshotPath);
     const identifiers = discovery.combined_reviews.flatMap((review) => review.sources.map((source) => `${source.source}:${source.identifier}`));
     const comparison = compareSimilarSnapshot(previous.identifiers ?? [], identifiers);
     if (args.update_snapshot && discovery.external_query_plan.confirmed) atomicWriteFileSync(safeSnapshotPath, JSON.stringify({ version: 1, checked_at: new Date().toISOString(), identifiers, source_status: { prospero: discovery.sources.prospero.status, pubmed: discovery.sources.pubmed.status } }, null, 2), { encoding: "utf8" });
@@ -804,6 +803,17 @@ server.registerTool(
 
 async function runSearch(args: ProsperoSearchArgs) {
   return client.search(args);
+}
+
+// A corrupt or truncated snapshot must not crash the comparison; it is safely overwritten
+// when update_snapshot is requested, so fall back to an empty prior state.
+function readSnapshotSafely(snapshotPath: string): { identifiers?: string[] } {
+  if (!existsSync(snapshotPath)) return {};
+  try {
+    return JSON.parse(readFileSync(snapshotPath, "utf8")) as { identifiers?: string[] };
+  } catch {
+    return {};
+  }
 }
 
 async function fetchProsperoRecordPage(...args: Parameters<typeof import("./prospero-page.js").fetchProsperoRecordPage>) { return (await import("./prospero-page.js")).fetchProsperoRecordPage(...args); }

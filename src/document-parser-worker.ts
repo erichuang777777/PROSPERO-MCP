@@ -14,7 +14,13 @@ async function main() {
       const result = await parser.getText();
       if (result.total > maximumPages) throw new Error(`PDF exceeds ${maximumPages} page safety limit`);
       const text = enforceTextLimit(result.text);
-      process.stdout.write(JSON.stringify({ text, pages: result.pages.map((page) => ({ page: page.num, text: page.text.slice(0, maximumCharacters) })), warnings: [] }));
+      let remainingPageCharacters = maximumCharacters;
+      const pages = result.pages.map((page) => {
+        const slice = page.text.slice(0, Math.max(0, remainingPageCharacters));
+        remainingPageCharacters -= slice.length;
+        return { page: page.num, text: slice };
+      });
+      process.stdout.write(JSON.stringify({ text, pages, warnings: [] }));
     } finally { await parser.destroy(); }
     return;
   }
